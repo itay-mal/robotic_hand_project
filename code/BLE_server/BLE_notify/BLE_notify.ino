@@ -1,4 +1,7 @@
 // general purpose
+#include <time.h>
+#include <sys/time.h>
+#include "esp_sntp.h"
 
 // BLE server
 #include <BLEDevice.h>
@@ -24,6 +27,7 @@ Adafruit_MPU6050 mpu;
 
 #define BUFF_SIZE 100 // should be enugh...
 char buff[BUFF_SIZE];
+struct timeval tv_now;
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -97,10 +101,15 @@ void setup() {
 void loop() {
 
     // Get new sensor events with the readings
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
-
-    snprintf(buff, BUFF_SIZE, "%f:%f:%f:%f:%f:%f#", a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z);
+    sensors_event_t accel, gyro, temp;
+    mpu.getEvent(&accel, &gyro, &temp);
+    
+    // Get timestamp in microseconds
+    gettimeofday(&tv_now, NULL);
+    int64_t time_us = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
+    
+    // format message and set value
+    snprintf(buff, BUFF_SIZE, "%s:%f:%f:%f:%f:%f:%f#", String(time_us), accel.acceleration.x, accel.acceleration.y, accel.acceleration.z, gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
     pCharacteristic->setValue(buff);
     
     // notify changed value
