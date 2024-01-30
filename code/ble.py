@@ -1,13 +1,25 @@
 import asyncio
+import sys
 import signal
+import time
+import keyboard
 from bleak import BleakScanner, BleakClient, BleakGATTCharacteristic
 import logging
 
+# set script logger 
 logging.basicConfig(format='[%(asctime)s @ %(funcName)20s] %(message)s', datefmt='%H:%M:%S')
-log = logging.getLogger()
+log = logging.getLogger('script_logger')
 log.setLevel(logging.INFO)
 
-CHARACTARISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+# set logger for data collection
+handler = logging.FileHandler(f'data_measurements/measurements_{time.strftime("%Y_%m_%d-%H_%M_%S")}.csv')
+handler.setFormatter(logging.Formatter('%(message)s'))
+data_logger = logging.getLogger('data_logger')
+data_logger.addHandler(handler)
+data_logger.setLevel(logging.INFO)
+data_logger.info(f'timestamp,accX,accY,accZ,gyroX,gyroY,gyroZ,key_flag')
+
+CHARACTARISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8" # service id
 
 def ask_exit(_, __):
     global exit_flag
@@ -28,8 +40,10 @@ async def parse_data_cb(sender: BleakGATTCharacteristic, data:bytearray):
     if not decoded_msg.endswith('#'):
         log.error('recieved message appears to be corrupted')
         log.error(f'message is \"{decoded_msg}\"')
+    key_flag = "UP" if keyboard.is_pressed('w') else "DWN" if keyboard.is_pressed('s') else "FWD" if keyboard.is_pressed('d') else "BCK" if keyboard.is_pressed('a') else "-" # use 'a' key to label samples
     timestamp,accX, accY, accZ, gyroX, gyroY, gyroZ = data.decode('utf-8').rstrip('#').split(':')
-    log.info(f'timestamp:{timestamp}, accX:{accX}, accY:{accY}, accZ:{accZ}, gyroX:{gyroX}, gyroY:{gyroY}, gyroZ:{gyroZ}')
+    log.info(f'timestamp:{timestamp}, accX:{accX}, accY:{accY}, accZ:{accZ}, gyroX:{gyroX}, gyroY:{gyroY}, gyroZ:{gyroZ} {key_flag}')
+    data_logger.info(f'{timestamp},{accX},{accY},{accZ},{gyroX},{gyroY},{gyroZ},{key_flag}')
 
 
 def disconnect_cb(client: BleakClient):
@@ -58,7 +72,7 @@ async def stay_connected(address: str, name: str, timeout: float = 4.0):
                 await connect_and_start_notify(_client=client, uuid=CHARACTARISTIC_UUID, _callback=parse_data_cb)
             except Exception as e:
                 log.error(f"{type(e)}: {e}")
-        log.info("connected: {}".format(client.is_connected))
+        log.debug("connected: {}".format(client.is_connected))
         await asyncio.sleep(1)
     log.info("Exit Loop")
 
@@ -83,6 +97,9 @@ async def run():
     log.info("Attempting to connect to device and start recording")
     
     await stay_connected(address=my_device.address, name=d.name)
+
+def got_input():
+    log.info(f"got input {sys.stdin.readline()}")
 
 def main():
     loop = asyncio.new_event_loop()
