@@ -11,8 +11,12 @@
 Adafruit_MPU6050 mpu;
 sensors_event_t accel, gyro, temp;
 
-const int START    = 0xAA;
-const int GET_DATA = 0xAB;
+const int START     = 0xAA;
+const int GET_DATA  = 0xAB;
+const int STOP      = 0xAC;
+const int HANDSHAKE = 0xAD;
+
+bool LED = LOW;
 
 #define BUFF_SIZE 100 // should be enugh...
 char buff[BUFF_SIZE];
@@ -20,6 +24,8 @@ struct timeval tv_now;
 
 void setup() {
     Serial.begin(115200);
+
+    pinMode(13, OUTPUT); // internal led
 
     // wait for monitor wakeup
     while (!Serial) {
@@ -40,11 +46,7 @@ void setup() {
     delay(100);
 
     Serial.println("ESP32 ready to go!");
-
-    while(Serial.read() != START){
-        delay(10);
-    }
-    Serial.println("Starting");
+    idle_loop();
 }
 
 void get_mpu_data() {
@@ -60,9 +62,43 @@ void get_mpu_data() {
     Serial.print(buff);
 }
 
+void idle_loop(){
+    int inbyte;
+    bool remain_inside = true;
+    while(remain_inside){
+        LED = !LED;
+        digitalWrite(13, LED);
+        
+        inbyte = Serial.read();
+        switch (inbyte)
+        {
+        case START:
+            remain_inside = false;
+            break;
+        
+        case HANDSHAKE:
+            delay(50);
+            Serial.println("LETS GO");
+            delay(50);
+            break;
+        
+        default:
+            if(inbyte != -1){
+                Serial.print("got byte ");
+                Serial.println(inbyte, HEX);
+            }
+            break;
+        }
+        delay(500);
+    }
+    digitalWrite(13, LOW);
+}
+
 void loop() {
 
     get_mpu_data();
-
-    // delay(2);
+    
+    if(Serial.read() == STOP){
+        idle_loop();
+    }
 }
