@@ -1,4 +1,3 @@
-import sys
 import time
 import keyboard
 import logging
