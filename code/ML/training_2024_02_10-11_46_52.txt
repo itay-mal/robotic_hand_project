@@ -1,0 +1,2 @@
+Epoch 10: train RMSE 1.8492, test RMSE 1.8490
+Epoch 20: train RMSE 1.8479, test RMSE 1.8478

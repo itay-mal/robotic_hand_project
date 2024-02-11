@@ -1,0 +1,1 @@
+Epoch 10: train RMSE 0.4461, test RMSE 0.4461

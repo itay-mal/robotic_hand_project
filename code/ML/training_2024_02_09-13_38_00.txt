@@ -1,0 +1,5 @@
+Epoch 10: train RMSE 1.8510, test RMSE 1.8507
+Epoch 20: train RMSE 1.8479, test RMSE 1.8482
+Epoch 30: train RMSE 1.8459, test RMSE 1.8463
+Epoch 40: train RMSE 1.8414, test RMSE 1.8418
+Epoch 50: train RMSE 1.8410, test RMSE 1.8410
