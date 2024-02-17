@@ -2,3 +2,5 @@
 **/.builds
 **/.venv
 data_measurements
+training_outputs
+*.onnx

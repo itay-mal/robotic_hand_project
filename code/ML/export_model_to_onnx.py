@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.utils.data as data
+import os
 
 
 
@@ -26,11 +27,16 @@ class MotionClassifier(nn.Module):
 
 # load pretrained params
 model = MotionClassifier()
-model.load_state_dict(torch.load('code/ML/trained_model.pt'))
+print(os.getcwd())
+model.load_state_dict(torch.load('training_outputs/trained_model.pt'))
 model.eval()
 
 # save as onnx
-torch_input = torch.randn(1, 1, 32, 32)
+torch_input = torch.randn(1, 32, 32)
+torch.onnx.export(model, torch_input, 
+                  "my_model.onnx", 
+                  verbose=True
+                  )
 onnx_program = torch.onnx.export(model, torch_input)
 
 onnx_program.save("my_motion_classifier.onnx")

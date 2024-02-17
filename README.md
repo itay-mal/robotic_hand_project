@@ -27,9 +27,9 @@ Supervised By:  [Kobi Kohay](mailto:kohai@ee.technion.ac.il?subject=Robotic\%20H
 ## ESP32 Connection
 
 connect the ESP32 board to the IMU in the following manner:  
-![connection scheme](readme_src\esp_imu_connection.PNG)
+![connection scheme](/readme_src/esp_imu_connection.PNG)
 
 ## Supporters 🙏
 
 Many thanks to the supporters and advisors of this project!  
-[![Haifa 3D](readme_src\Haifa_3D_logo.png)](https://github.com/Haifa3D)   [![Technion](readme_src\TechnionLogo.png)](https://www.technion.ac.il/en/home-2/)    [![CRML Lab](readme_src\CRML-logo.jpg)](https://crml.eelabs.technion.ac.il/)
+[![Haifa 3D](/readme_src/Haifa_3D_logo.png)](https://github.com/Haifa3D)   [![Technion](/readme_src/TechnionLogo.png)](https://www.technion.ac.il/en/home-2/)    [![CRML Lab](/readme_src/CRML-logo.jpg)](https://crml.eelabs.technion.ac.il/)
