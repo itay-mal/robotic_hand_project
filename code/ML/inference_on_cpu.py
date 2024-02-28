@@ -37,7 +37,7 @@ def fetch_data(esp: serial.Serial):
             msg = esp.read_until(b'@').decode('utf-8').strip().replace('@','').replace('#','')
             # print(msg)
             t_stamp, accelx, accely, accelz, gyrox, gyroy, gyroz, _ = msg.split(',')
-            sample = (float(accelx), float(accely), float(accelz), float(gyrox), float(gyroy), float(gyroz))
+            sample = (float(accelx), float(accely), float(accelz))#, float(gyrox), float(gyroy), float(gyroz))
             return int(t_stamp), sample
         except Exception as e:
             # print(f"could'nt read message: {e}, trying again")
@@ -63,7 +63,9 @@ def main():
         predict = model.call(tf.constant([[sample]]))
         # print(sample)
         # print(predict)
-        print(idx_to_label[int(tf.argmax(predict,axis=1))], predict, sample, time - time_p)
+        if int(tf.argmax(predict,axis=1)) == 1:
+            print("up")
+        # print(idx_to_label[int(tf.argmax(predict,axis=1))], predict, sample, time - time_p)
         time_p = time
 
 
