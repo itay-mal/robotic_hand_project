@@ -65,7 +65,7 @@ def main():
     global exit_flag
     signal.signal(signal.SIGINT, ask_exit)
 
-    data_logger = open(f'data_measurements/measurements_{time.strftime("%Y_%m_%d-%H_%M_%S")}.csv', 'wt')
+    data_logger = open(f'data_measurements/measurements_rest_{time.strftime("%Y_%m_%d-%H_%M_%S")}.csv', 'wt')
     data_logger.write('timestamp,accX,accY,accZ,gyroX,gyroY,gyroZ,key_flag\n')
     
     esp = connect_to_esp()

@@ -1,7 +1,6 @@
-import tensorflow as tf
+# import tensorflow as tf
 from keras import Model
 from keras.layers import GRU, Dense
-
 
 class MotionClassifier(Model):
     def __init__(self):

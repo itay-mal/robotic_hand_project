@@ -1,8 +1,9 @@
 import time
 import serial
 import queue
-import tensorflow as tf
-from MotionClassifier import MotionClassifier
+import pickle
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 import threading
 
 MAX_RECONNECT_TRIES = 5
@@ -56,25 +57,22 @@ def main():
     #connect to esp to fetch measurements
     esp = connect_to_esp()
     time_p = 0
-    model = MotionClassifier()
-    model.load_weights('code/ML/model_wheights.index')
+    with open("code/ML/saved_RF_calssifier.pickle", 'rb') as infile:
+        model: RandomForestClassifier = pickle.load(infile)
+    buffer = np.zeros((1,2400))
+    now_p = 0
     while True:
-        time, sample = fetch_data(esp)
-        predict = model.call(tf.constant([[sample]]))
-        # print(sample)
-        # print(predict)
-        if int(tf.argmax(predict,axis=1)) == 1:
-            print("up")
-        # elif int(tf.argmax(predict,axis=1)) == 2:
-        #     print("down")
-        elif int(tf.argmax(predict,axis=1)) == 3:
-            print("forward")
-        # elif int(tf.argmax(predict,axis=1)) == 4:
-        #     print("back")
-        # print(idx_to_label[int(tf.argmax(predict,axis=1))])
-        # print(idx_to_label[int(tf.argmax(predict,axis=1))], predict, sample, time - time_p)
-        time_p = time
-
+        now = time.time()
+        if now - now_p > 0.02:
+            time_, sample = fetch_data(esp)
+            now_p = now
+            buffer = np.hstack([buffer[0,6:].reshape((1,-1)), np.array(sample).reshape((1,-1))])
+            predict = model.predict_proba(buffer)
+            predicted_label = idx_to_label[np.argmax(predict)]
+            if predicted_label != 'rest' and np.max(predict) > 0.8:
+                print(predicted_label, predict)
+            # print(time_ - time_p)
+            # time_p = time_
 
 if __name__ == '__main__':
     main()
