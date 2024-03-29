@@ -1,6 +1,6 @@
 // in this sketch we only send data in pre-agreed format,
-// the actual inference (prediction) is done on the commputer
-
+// the actual inference (prediction)/ collection is done on the commputer
+// with python script
 
 // general purpose
 #include <time.h>

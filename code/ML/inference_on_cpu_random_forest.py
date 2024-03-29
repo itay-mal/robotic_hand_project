@@ -1,13 +1,13 @@
 import time
 import serial
-import queue
 import pickle
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-import threading
 
 MAX_RECONNECT_TRIES = 5
 READY = 0xAA
+FREQ = 80 # Hz
+COLLECT_MODE = 0
 
 def connect_to_esp():
     esp = None
@@ -45,7 +45,10 @@ def fetch_data(esp: serial.Serial):
             esp.flush()
 
 def main():
-
+    if COLLECT_MODE:
+        outfile = open(f"data_measurements/back_{time.strftime('%d_%m_%Y_%H_%M_%S')}.csv", "wt")
+        outfile.write("timestamp,accX,accY,accZ,gyroX,gyroY,gyroZ\n")
+    
     idx_to_label = {
         0: 'rest',
         1: 'up',
@@ -59,21 +62,24 @@ def main():
     time_p = 0
     with open("code/ML/saved_RF_calssifier.pickle", 'rb') as infile:
         model: RandomForestClassifier = pickle.load(infile)
-    buffer = np.zeros((1,2400))
+    buffer = np.zeros((1,600))
     now_p = 0
     while True:
-        now = time.time()
-        if now - now_p > 0.02:
+        now = time.perf_counter_ns()
+        if now - now_p > 1e9/FREQ:
             time_, sample = fetch_data(esp)
+            # print(now - now_p, sample)
             now_p = now
-            buffer = np.hstack([buffer[0,6:].reshape((1,-1)), np.array(sample).reshape((1,-1))])
-            predict = model.predict_proba(buffer)
-            predicted_label = idx_to_label[np.argmax(predict)]
-            if predicted_label != 'rest' and np.max(predict) > 0.8:
-                print(predicted_label, predict)
-            # print(time_ - time_p)
-            # time_p = time_
+            if COLLECT_MODE:
+                outfile.write(f"{time_},{','.join([str(i) for i in sample])}\n")
+            else:
+                buffer = np.hstack([buffer[0,6:].reshape((1,-1)), np.array(sample).reshape((1,-1))])
+                predict = model.predict_proba(buffer)
+                predicted_label = idx_to_label[np.argmax(predict)+1]
+                if predicted_label != 'rest' and np.max(predict) > 0.1:
+                    print(predicted_label, predict)
+                # print(time_ - time_p)
+                # time_p = time_
 
 if __name__ == '__main__':
     main()
-
