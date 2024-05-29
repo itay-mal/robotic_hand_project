@@ -72,7 +72,7 @@ def print_buffer(child_conn: multiprocessing.connection):
         p.set_ydata(buffer[0,DISPLAY_AXIS::6])
         ax['main'].set_ylim(np.min(p.get_ydata()),
                     np.max(p.get_ydata()))
-        ax['main'].set_title(f'Live Buffer Axis {DATA_AXES[DISPLAY_AXIS]} rate: {int(1e9/delta_t)} Hz')
+        ax['main'].set_title(f'Live Buffer Axis {DATA_AXES[DISPLAY_AXIS]} rate: {int(1e6/delta_t)} Hz')
         fig.canvas.draw_idle()
         plt.pause(0.00001)
 
@@ -81,48 +81,51 @@ def update_buffer(buffer: np.ndarray, sample: tuple):
 
 def main():
     if COLLECT_MODE:
-        outfile = open(f"data_measurements/back_{time.strftime('%d_%m_%Y_%H_%M_%S')}.csv", "wt")
+        outfile = open(f"data_measurements/rest_{time.strftime('%d_%m_%Y_%H_%M_%S')}.csv", "wt")
         outfile.write("timestamp,accX,accY,accZ,gyroX,gyroY,gyroZ\n")
     
     idx_to_label = {
         0: 'rest',
         1: 'up',
-        2: 'down',
-        3: 'forward',
-        4: 'back'
+        # 2: 'down',
+        2: 'forward',
+        # 4: 'back'
     }
 
     #connect to esp to fetch measurements
     esp = connect_to_esp()
     time_p = 0
     if not COLLECT_MODE:
-        with open("code/ML/saved_RF_calssifier.pickle", 'rb') as infile:
+        with open("code/ML/saved_RF_calssifier_2axis.pickle", 'rb') as infile:
             model: RandomForestClassifier = pickle.load(infile)
         
     buffer = np.zeros((1,600))
     now_p = 0
-    parent_conn, child_conn = multiprocessing.Pipe()
-    child_p = multiprocessing.Process(target=print_buffer, args=[child_conn], daemon=True)
-    child_p.start()
-    cnt = 0
+    # parent_conn, child_conn = multiprocessing.Pipe()
+    # child_p = multiprocessing.Process(target=print_buffer, args=[child_conn], daemon=True)
+    # child_p.start()
+    # cnt = 0
     while True:
         now = time.perf_counter_ns()
         if now - now_p > 1e9/FREQ:
             time_, sample = fetch_data(esp)
-            # print(now - now_p, cnt)
-            delta_t = now - now_p
+            # print(sample)
+            # print(f"elapsed: {time_ - time_p}")
+            delta_t = time_ - time_p
+            # print(now - now_p)
+            time_p = time_
             now_p = now
             if COLLECT_MODE:
                 outfile.write(f"{time_},{','.join([str(i) for i in sample])}\n")
             else:
                 buffer = update_buffer(buffer, sample)
-                if cnt == 0:
-                    parent_conn.send((buffer, delta_t))
+                # if cnt == 0:
+                #     parent_conn.send((buffer, delta_t))
                 predict = model.predict_proba(buffer)
-                predicted_label = idx_to_label[np.argmax(predict)+1]
+                predicted_label = idx_to_label[np.argmax(predict)]
                 if predicted_label != 'rest' and np.max(predict) > CONFIDENCE_TH:
                     print(predicted_label, predict)
-            cnt = (cnt+1)%5
+            # cnt = (cnt+1)%40
 
 if __name__ == '__main__':
     main()

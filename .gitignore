@@ -5,3 +5,4 @@ data_measurements
 training_outputs
 *.onnx
 .env
+todolist.docx
