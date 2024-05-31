@@ -21,7 +21,7 @@ def connect_to_esp():
     esp = None
     for try_ in range(MAX_RECONNECT_TRIES):
         try:
-            esp = serial.Serial(port='COM5', baudrate=115200, timeout=.1)
+            esp = serial.Serial(port='COM3', baudrate=115200, timeout=.1)
             if esp is not None:
                 break
         except serial.SerialException as e:
