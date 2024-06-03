@@ -18,15 +18,18 @@ sensors_event_t accel, gyro, temp;
 
 const char READY = 0xAA;
 
-#define PERIOD_US 12500  // == 80 [Hz]
-#define THRESHOLD 0.6 // # of votes
+#define CAPTURE_WINDOW_US 330000  // == 80 [Hz] - sample rate
+#define PERIOD_US 12500  // == 80 [Hz] - sample rate
+#define THRESHOLD 0.7 // # of votes
+#define AXES 6 //atributes
 
 float buff[NUM_FEATURES] = {0};
 char msg[300];
 int votes[NUM_CLASSES] = {0};
 struct timeval tv_now;
 int64_t time_us_p;
-int thresh_votes = 0.6 * NUM_TREES;
+int64_t previous_catch = 0;
+int thresh_votes = THRESHOLD * NUM_TREES;
 
 void setup() {
     Serial.begin(115200);
@@ -68,23 +71,31 @@ void loop() {
         rf_predict(buff, votes);
         // sprintf(msg,"%lld: rest:%d, up:%d, forward:%d | accX:%f accY:%f accZ:%f gyroX:%f gyroY:%f gyroZ:%f\n", time_us, votes[0], votes[1] , votes[2], accel.acceleration.x, accel.acceleration.y, accel.acceleration.z, gyro.gyro.x, gyro.gyro.y, gyro.gyro.z);
         // Serial.print(msg);
-        if(votes[1] >= thresh_votes){
-            Serial.print('UP');
-        } else if(votes[2] >= thresh_votes){
-            Serial.print('FORWARD');
-        }
-    }
+        
+        // TODO: consider filtering on predictions in a row
+        if(abs(time_us - previous_catch) > CAPTURE_WINDOW_US ){
+            if(votes[1] >= thresh_votes){
+                sprintf(msg,"%lld: UP, votes:%d\n", time_us, votes[1]);
+                previous_catch = time_us;
+                Serial.print(msg);
+            } else if(votes[2] >= thresh_votes){
+                sprintf(msg,"%lld: FORWARD, votes:%d\n", time_us, votes[2]);
+                previous_catch = time_us;
+                Serial.print(msg);
+            } 
+        } // CAPTURE_WINDOW_US
+    } // PERIOD_US
 }
 
 void add_sample_to_buffer(){
-    for(int i = AXES; i < BUFF_SIZE; i++){
+    for(int i = AXES; i < NUM_FEATURES; i++){
         buff[i-AXES] = buff[i];
     }
-    buff[BUFF_SIZE-6] = accel.acceleration.x;
-    buff[BUFF_SIZE-5] = accel.acceleration.y;
-    buff[BUFF_SIZE-4] = accel.acceleration.z;
-    buff[BUFF_SIZE-3] = gyro.gyro.x;
-    buff[BUFF_SIZE-2] = gyro.gyro.y;
-    buff[BUFF_SIZE-1] = gyro.gyro.z;
+    buff[NUM_FEATURES-6] = accel.acceleration.x;
+    buff[NUM_FEATURES-5] = accel.acceleration.y;
+    buff[NUM_FEATURES-4] = accel.acceleration.z;
+    buff[NUM_FEATURES-3] = gyro.gyro.x;
+    buff[NUM_FEATURES-2] = gyro.gyro.y;
+    buff[NUM_FEATURES-1] = gyro.gyro.z;
 }
  
