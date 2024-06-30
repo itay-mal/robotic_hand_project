@@ -112,13 +112,22 @@ int64_t time_us_p;
 int64_t previous_catch = 0;
 int thresh_votes = THRESHOLD * NUM_TREES;
 
-int fingers_closed = 0; // a flag that represents if the hand is opened or closed
 
-//unsigned char no_task[] =  {5, 0b11111000, 20, 0b00000000, 0b11111000}; //movement length byte, torque,time,active motor, motor direction
-unsigned char close_task[] =  {5, 0b11111000, 20, 0b01111000, 0b11111000}; //movement length byte, torque,time,active motor, motor direction
-unsigned char open_task[]  =  {5, 0b11111000, 20, 0b01111000, 0b00000000}; //movement length byte, torque,time,active motor, motor direction
-unsigned char spin_right[] =  {5, 0b11111000, 20, 0b10000000, 0b00000000}; //movement length byte, torque,time,active motor, motor direction 
-unsigned char spin_left[]  =  {5, 0b11111000, 20, 0b10000000, 0b10000000}; //movement length byte, torque,time,active motor, motor direction
+//unsigned char no_task[] =   {5, 0b11111000, 20, 0b00000000, 0b11111000};  //movement length byte, torque,time,active motor, motor direction
+// unsigned char close_task[] =  {5, 0b11111000, 20, 0b01111000, 0b11111000}; //movement length byte, torque,time,active motor, motor direction
+// unsigned char open_task[]  =  {5, 0b11111000, 20, 0b01111000, 0b00000000}; //movement length byte, torque,time,active motor, motor direction
+// unsigned char spin_right[] =  {5, 0b11111000, 20, 0b10000000, 0b00000000}; //movement length byte, torque,time,active motor, motor direction 
+// unsigned char spin_left[]  =  {5, 0b11111000, 20, 0b10000000, 0b10000000}; //movement length byte, torque,time,active motor, motor direction
+
+bool active = false; // a flag that represents if any action is currently active
+int current_action = 0;
+unsigned char idle[] = {5, 0b11111000, 20, 0b01111000, 0b00000000}; // open all
+unsigned char actions[][5] = {
+    {5, 0b11111000, 20, 0b01111000, 0b11111000}, // close all (high torque)
+    {5, 0b00000000, 20, 0b01111000, 0b10100000}, //pinch
+    {5, 0b00000000, 20, 0b01111000, 0b10111000} // pointer
+};
+
 
 //bluetooth functions
 bool connectToServer() {
@@ -281,10 +290,20 @@ void loop() {
                     sprintf(msg,"%lld: UP, votes:%d\n", time_us, votes[1]);
                     previous_catch = time_us;
                     Serial.print(msg);
+                    if(!active){ // idel -> active
+                        active = true;
+                        pRemoteCharExecute->writeValue(actions[current_action], actions[current_action][0]);
+                    } else { // active -> idle
+                        active = false;
+                        pRemoteCharExecute->writeValue(idle, idle[0]);
+                    }
                 } else if(votes[2] >= thresh_votes){
                     sprintf(msg,"%lld: FORWARD, votes:%d\n", time_us, votes[2]);
                     previous_catch = time_us;
                     Serial.print(msg);
+                    if(!active){ // only change active mode if in idle
+                        current_action = (current_action + 1) % 3;
+                    }
                 } 
             } // CAPTURE_WINDOW_US
         } // PERIOD_US
