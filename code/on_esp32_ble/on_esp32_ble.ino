@@ -21,10 +21,13 @@
 // classifier
 #include "forrest.hpp"
 
+// buzzer
+#include "pitches.hpp"
+
 /*************************************************************************************/
 /*                                  BlE Parameters                                   */
 /*************************************************************************************/
-#define MY_DEVICE_ADDRESS  "24:62:ab:f9:72:9e" // change the address to the hands address if needed
+#define MY_DEVICE_ADDRESS  "b8:d6:1a:43:5e:42" // change the address to the hands address if needed
 //the names of the hands services used to send commands to the hand 
 #define HAND_DIRECT_EXECUTE_SERVICE_UUID     "e0198000-7544-42c1-0000-b24344b6aa70"//sends the command according to the given message written in the code
 #define EXECUTE_ON_WRITE_CHARACTERISTIC_UUID "e0198000-7544-42c1-0001-b24344b6aa70"
@@ -55,6 +58,49 @@ static BLEAdvertisedDevice* myDevice;
 unsigned long t_scan; // last BLE scan timestamp (ms)
 unsigned long t_disconnected; //the elapsed time from a disconecting event
 
+
+/*************************************************************************************/
+/*                 Go to Sleep and Keep Scanning Setting:                            */
+/*************************************************************************************/
+int disconnect_tune[] = { NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4 };
+#define BUZZZER_PIN 4
+#define NOTE_DURATION 250
+
+void play_connected_tune(){
+    int tune[] = { NOTE_C4, NOTE_E4, NOTE_A4 };
+    for(int i = 0; i < 3; i++){
+        tone(BUZZZER_PIN, tune[i], NOTE_DURATION);
+        delay(NOTE_DURATION);
+        noTone(BUZZZER_PIN);
+    }
+}
+
+void play_disconnected_tune(){
+    int tune[] = { NOTE_B3, NOTE_G3 };
+    for(int i = 0; i < 3; i++){
+        tone(BUZZZER_PIN, tune[i], NOTE_DURATION);
+        delay(NOTE_DURATION);
+        noTone(BUZZZER_PIN);
+    }
+}
+
+void play_ready_tune(){
+    int tune[] = { NOTE_C4, NOTE_C4, 0, NOTE_C4, NOTE_C4 };
+    for(int i = 0; i < 5; i++){
+        tone(BUZZZER_PIN, tune[i], NOTE_DURATION);
+        delay(NOTE_DURATION);
+        noTone(BUZZZER_PIN);
+    }
+}
+
+void play_mode_indication(int mode_num){
+    for(int i = 0; i < mode_num + 1; i++){
+        tone(BUZZZER_PIN, NOTE_D4, NOTE_DURATION);
+        delay(NOTE_DURATION);
+        noTone(BUZZZER_PIN);
+    }
+}
+
 /*************************************************************************************/
 /*                  BLE Class Definition and Set Callbacks:                          */
 /*************************************************************************************/
@@ -64,6 +110,7 @@ BluetoothSerial SerialBT;
 //for connecting to the hand
 class MyClientCallback : public BLEClientCallbacks {
   void onConnect(BLEClient* pclient) {
+    play_connected_tune();
   }
 
   void onDisconnect(BLEClient* pclient) {
@@ -71,6 +118,7 @@ class MyClientCallback : public BLEClientCallbacks {
     Serial.println("onDisconnect");
     doScan = true;
     t_disconnected = millis();
+    play_disconnected_tune();
   }
 };
 // Scan for BLE servers and find the first one that advertises the service we are looking for.
@@ -99,7 +147,7 @@ sensors_event_t accel, gyro, temp;
 
 const char READY = 0xAA;
 
-#define CAPTURE_WINDOW_US 330000  // == 80 [Hz] - sample rate
+#define CAPTURE_WINDOW_US 1000000
 #define PERIOD_US 12500  // == 80 [Hz] - sample rate
 #define THRESHOLD 0.7 // # of votes
 #define AXES 6 //atributes
@@ -112,20 +160,28 @@ int64_t time_us_p;
 int64_t previous_catch = 0;
 int thresh_votes = THRESHOLD * NUM_TREES;
 
+#define CLOSE_ALL_HIGH_TORQUE {5, 0b11111000, 20, 0b01111000, 0b11111000} 
+#define OPEN_ALL              {5, 0b11111000, 20, 0b01111000, 0b00000000}
+#define CLOSE_ALL_LOW_TORQUE  {5, 0b00000000, 20, 0b01111000, 0b11111000}
+#define TRIPOD                {5, 0b00000000, 20, 0b01111000, 0b11100000}
+#define TRIPOD_HIGH           {5, 0b11111000, 20, 0b01111000, 0b11100000}
+#define PINCH                 {5, 0b00000000, 20, 0b01111000, 0b10100000}
+#define PINCH_HIGH            {5, 0b11111000, 20, 0b01111000, 0b10100000}
+#define POINTER               {5, 0b00000000, 20, 0b01111000, 0b10111000}
+#define COOL                  {5, 0b00000000, 20, 0b01111000, 0b10110000}
+#define THE_FINGER            {5, 0b00000000, 20, 0b01111000, 0b11011000}
+#define TURN_RIGHT            {5, 0b00000000, 25, 0b10000000, 0b10110000}
+#define TURN_LEFT             {5, 0b00000000, 25, 0b10000000, 0b00110000}
 
-//unsigned char no_task[] =   {5, 0b11111000, 20, 0b00000000, 0b11111000};  //movement length byte, torque,time,active motor, motor direction
-// unsigned char close_task[] =  {5, 0b11111000, 20, 0b01111000, 0b11111000}; //movement length byte, torque,time,active motor, motor direction
-// unsigned char open_task[]  =  {5, 0b11111000, 20, 0b01111000, 0b00000000}; //movement length byte, torque,time,active motor, motor direction
-// unsigned char spin_right[] =  {5, 0b11111000, 20, 0b10000000, 0b00000000}; //movement length byte, torque,time,active motor, motor direction 
-// unsigned char spin_left[]  =  {5, 0b11111000, 20, 0b10000000, 0b10000000}; //movement length byte, torque,time,active motor, motor direction
+#define NUM_ACTIONS 3
 
 bool active = false; // a flag that represents if any action is currently active
 int current_action = 0;
 unsigned char idle[] = {5, 0b11111000, 20, 0b01111000, 0b00000000}; // open all
 unsigned char actions[][5] = {
-    {5, 0b11111000, 20, 0b01111000, 0b11111000}, // close all (high torque)
-    {5, 0b00000000, 20, 0b01111000, 0b10100000}, //pinch
-    {5, 0b00000000, 20, 0b01111000, 0b10111000} // pointer
+    CLOSE_ALL_HIGH_TORQUE,
+    POINTER,
+    THE_FINGER
 };
 
 
@@ -262,6 +318,7 @@ void setup() {
     time_us_p = 0;
 
     Serial.println("ESP32 ready to go!");
+    play_ready_tune();
 }
 
 void loop() {
@@ -287,23 +344,29 @@ void loop() {
             // TODO: consider filtering on predictions in a row
             if(abs(time_us - previous_catch) > CAPTURE_WINDOW_US ){
                 if(votes[1] >= thresh_votes){
-                    sprintf(msg,"%lld: UP, votes:%d\n", time_us, votes[1]);
                     previous_catch = time_us;
-                    Serial.print(msg);
                     if(!active){ // idel -> active
                         active = true;
                         pRemoteCharExecute->writeValue(actions[current_action], actions[current_action][0]);
                     } else { // active -> idle
                         active = false;
                         pRemoteCharExecute->writeValue(idle, idle[0]);
+                        Serial.print(msg);
                     }
+                    sprintf(msg,"%lld: UP, votes:%d, active: %d, mode: %d\n", time_us, votes[1], active, current_action);
+                    Serial.print(msg);
                 } else if(votes[2] >= thresh_votes){
-                    sprintf(msg,"%lld: FORWARD, votes:%d\n", time_us, votes[2]);
                     previous_catch = time_us;
                     Serial.print(msg);
-                    if(!active){ // only change active mode if in idle
-                        current_action = (current_action + 1) % 3;
+                    if(active){ // only change active mode if in idle
+                        sprintf(msg,"not changing mode while active!\n", time_us, votes[2]);
+                        Serial.print(msg);
+                    } else {
+                        current_action = (current_action + 1) % NUM_ACTIONS;
+                        play_mode_indication(current_action);
                     }
+                    sprintf(msg,"%lld: FORWARD, votes:%d, active: %d, mode: %d\n", time_us, votes[2], active, current_action);
+                    Serial.print(msg);
                 } 
             } // CAPTURE_WINDOW_US
         } // PERIOD_US
