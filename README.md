@@ -13,6 +13,10 @@ Supervised By:  [Kobi Kohay](mailto:kohai@ee.technion.ac.il?subject=Robotic\%20H
 
 * ESP32 - we used [Sparkfun ESP32 Thing Plus](https://www.sparkfun.com/products/17381)
 * Inertial Measurement Unit (IMU) - we used [GY-521](http://hiletgo.com/ProductDetail/2157948.html)
+* Piezzo electric buzzer
+* 3.7V Lithium-Polymer (LiPo) Battery
+* [Prototype board](https://www.sparkfun.com/products/12070)
+* 3D printed case [see stl files](/box_3d/)
 
 ### Software
 
@@ -24,9 +28,8 @@ Supervised By:  [Kobi Kohay](mailto:kohai@ee.technion.ac.il?subject=Robotic\%20H
 * Python3
   * To install required libraries run `pip install -r python_reqs.txt`
 
-## ESP32 Connection
+## ESP32 Circuit Connection
 
-connect the ESP32 board to the IMU in the following manner:  
 ![connection scheme](/readme_src/esp_imu_connection.PNG)
 
 ## Supporters 🙏

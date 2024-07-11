@@ -41,12 +41,15 @@ class MyCharacteristicCallBack : public BLECharacteristicCallbacks {
     Serial.print("data was read from UUID: "); 
     Serial.print(pCharacteristic->getUUID().toString().c_str());
     Serial.print(" "); 
-    Serial.print(pCharacteristic->getValue().c_str()); 
+    char buff[100];
+    strcpy(buff,pCharacteristic->getValue().c_str());
+    for(int i = 0; buff[i] != '\0'; i++){
+      Serial.print(buff[i]); 
+      Serial.print(" "); 
+    }
     Serial.print("\n"); 
   }
 };
-
-
 
 
 void setup() {
