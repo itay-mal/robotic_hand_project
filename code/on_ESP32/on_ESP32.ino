@@ -18,7 +18,7 @@ sensors_event_t accel, gyro, temp;
 
 const char READY = 0xAA;
 
-#define CAPTURE_WINDOW_US 330000  // == 80 [Hz] - sample rate
+#define CAPTURE_WINDOW_US 330000
 #define PERIOD_US 12500  // == 80 [Hz] - sample rate
 #define THRESHOLD 0.7 // # of votes
 #define AXES 6 //atributes
