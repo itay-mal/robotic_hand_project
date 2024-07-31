@@ -25,7 +25,7 @@
 #include "pitches.hpp"
 
 /*************************************************************************************/
-/*                                  BlE Parameters                                   */
+/*                                  BLE Parameters                                   */
 /*************************************************************************************/
 #define MY_DEVICE_ADDRESS  "b8:d6:1a:43:5e:42" // change the address to the hands address if needed
 //the names of the hands services used to send commands to the hand 
@@ -160,16 +160,16 @@ int64_t time_us_p;
 int64_t previous_catch = 0;
 int thresh_votes = THRESHOLD * NUM_TREES;
 
-#define CLOSE_ALL_HIGH_TORQUE {5, 0b11111000, 20, 0b01111000, 0b11111000} 
-#define OPEN_ALL              {5, 0b11111000, 20, 0b01111000, 0b00000000}
-#define CLOSE_ALL_LOW_TORQUE  {5, 0b00000000, 20, 0b01111000, 0b11111000}
-#define TRIPOD                {5, 0b00000000, 20, 0b01111000, 0b11100000}
-#define TRIPOD_HIGH           {5, 0b11111000, 20, 0b01111000, 0b11100000}
-#define PINCH                 {5, 0b00000000, 20, 0b01111000, 0b10100000}
-#define PINCH_HIGH            {5, 0b11111000, 20, 0b01111000, 0b10100000}
-#define POINTER               {5, 0b00000000, 20, 0b01111000, 0b10111000}
-#define COOL                  {5, 0b00000000, 20, 0b01111000, 0b10110000}
-#define THE_FINGER            {5, 0b00000000, 20, 0b01111000, 0b11011000}
+#define CLOSE_ALL_HIGH_TORQUE {5, 0b11111000, 25, 0b01111000, 0b11111000} 
+#define OPEN_ALL              {5, 0b11111000, 25, 0b01111000, 0b00000000}
+#define CLOSE_ALL_LOW_TORQUE  {5, 0b00000000, 25, 0b01111000, 0b11111000}
+#define TRIPOD                {5, 0b00000000, 25, 0b01111000, 0b11100000}
+#define TRIPOD_HIGH           {5, 0b11111000, 25, 0b01111000, 0b11100000}
+#define PINCH                 {5, 0b00000000, 25, 0b01111000, 0b10100000}
+#define PINCH_HIGH            {5, 0b11111000, 25, 0b01111000, 0b10100000}
+#define POINTER               {5, 0b00000000, 25, 0b01111000, 0b10111000}
+#define COOL                  {5, 0b00000000, 25, 0b01111000, 0b10110000}
+#define THE_FINGER            {5, 0b00000000, 25, 0b01111000, 0b11011000}
 #define TURN_RIGHT            {5, 0b00000000, 25, 0b10000000, 0b10110000}
 #define TURN_LEFT             {5, 0b00000000, 25, 0b10000000, 0b00110000}
 
@@ -177,7 +177,7 @@ int thresh_votes = THRESHOLD * NUM_TREES;
 
 bool active = false; // a flag that represents if any action is currently active
 int current_action = 0;
-unsigned char idle[] = {5, 0b11111000, 20, 0b01111000, 0b00000000}; // open all
+unsigned char idle[] = OPEN_ALL; // open all
 unsigned char actions[][5] = {
     CLOSE_ALL_HIGH_TORQUE,
     POINTER,
