@@ -27,7 +27,7 @@
 /*************************************************************************************/
 /*                                  BLE Parameters                                   */
 /*************************************************************************************/
-#define MY_DEVICE_ADDRESS  "b8:d6:1a:43:5e:42" // change the address to the hands address if needed
+#define MY_DEVICE_ADDRESS  "24:62:ab:f2:af:46" // change the address to the hands address if needed
 //the names of the hands services used to send commands to the hand 
 #define HAND_DIRECT_EXECUTE_SERVICE_UUID     "e0198000-7544-42c1-0000-b24344b6aa70"//sends the command according to the given message written in the code
 #define EXECUTE_ON_WRITE_CHARACTERISTIC_UUID "e0198000-7544-42c1-0001-b24344b6aa70"
@@ -181,7 +181,7 @@ unsigned char idle[] = OPEN_ALL; // open all
 unsigned char actions[][5] = {
     CLOSE_ALL_HIGH_TORQUE,
     POINTER,
-    THE_FINGER
+    COOL
 };
 
 
@@ -222,7 +222,7 @@ bool connectToServer() {
  
     // Read the value of the characteristic.
     if(pRemoteCharExecute->canRead()) {
-        String value = pRemoteCharExecute->readValue();
+        String value = pRemoteCharExecute->readValue().c_str();
         Serial.print("Execute: The characteristic value was: ");
         Serial.println(value.c_str());
     }
@@ -250,7 +250,7 @@ bool connectToServer() {
  
     // Read the value of the characteristic.
     if(pRemoteCharTrigger->canRead()) {
-      String value = pRemoteCharTrigger->readValue();
+      String value = pRemoteCharTrigger->readValue().c_str();
       Serial.print("Trigger: The characteristic value was: ");
       Serial.println(value.c_str());
     }
