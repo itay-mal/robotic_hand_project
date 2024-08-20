@@ -32,6 +32,14 @@ Supervised By:  [Kobi Kohay](mailto:kohai@ee.technion.ac.il?subject=Robotic\%20H
 
 ![connection scheme](/readme_src/esp_imu_connection.PNG)
 
+## Code Parts
+
+### [Trainig Data Collection](/code/on_cpu/)
+
+### [Classifier Training](/code/ML/)
+
+### [Inference On uController](/code/on_esp32_ble/)
+
 ## Supporters 🙏
 
 Many thanks to the supporters and advisors of this project!  

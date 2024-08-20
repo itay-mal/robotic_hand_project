@@ -11,7 +11,8 @@ import multiprocessing
 MAX_RECONNECT_TRIES = 5
 READY = 0xAA
 FREQ = 80 # Hz
-COLLECT_MODE = 0
+COLLECT_MODE = 0 # 0 = write to file, 1 = classifier inference
+OUTPUT_FILE_NAME = f"data_measurements/rest_{time.strftime('%d_%m_%Y_%H_%M_%S')}.csv"
 DISPLAY_AXIS = 0
 CONFIDENCE_TH = 0.6
 DATA_AXES = ['Acc X', 'Acc Y', 'Acc Z', 'Gyro X', 'Gyro Y', 'Gyro Z']
@@ -44,12 +45,10 @@ def fetch_data(esp: serial.Serial):
         try:
             esp.write(bytes((READY,)))
             msg = esp.read_until(b'@').decode('utf-8').strip().replace('@','').replace('#','')
-            # print(msg)
             t_stamp, accelx, accely, accelz, gyrox, gyroy, gyroz, _ = msg.split(',')
             sample = (float(accelx), float(accely), float(accelz), float(gyrox), float(gyroy), float(gyroz))
             return int(t_stamp), sample
         except Exception as e:
-            # print(f"could'nt read message: {e}, trying again")
             esp.flush()
 
 def print_buffer(child_conn: multiprocessing.connection):
@@ -64,7 +63,6 @@ def print_buffer(child_conn: multiprocessing.connection):
         global DISPLAY_AXIS
         DISPLAY_AXIS = DATA_AXES.index(label)
     axes_radio.on_clicked(axesfunc)
-    # ax['main'].set_title(f'Live Buffer Axis {DATA_AXES[DISPLAY_AXIS]} rate: {0} Hz')
     plt.show(block=False)
     plt.pause(1)
     while True:
@@ -81,7 +79,7 @@ def update_buffer(buffer: np.ndarray, sample: tuple):
 
 def main():
     if COLLECT_MODE:
-        outfile = open(f"data_measurements/rest_{time.strftime('%d_%m_%Y_%H_%M_%S')}.csv", "wt")
+        outfile = open(OUTPUT_FILE_NAME, "wt")
         outfile.write("timestamp,accX,accY,accZ,gyroX,gyroY,gyroZ\n")
     
     idx_to_label = {
